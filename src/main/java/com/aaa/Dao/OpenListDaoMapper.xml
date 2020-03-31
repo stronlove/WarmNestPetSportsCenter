@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aaa.Dao.OpenListDao">
+	<!-- 孙斌编写上 -->
+	
+	<resultMap type="com.aaa.Entity.OpenList" id="openlist">
+		<id column="openlistno" property="openlistno"/>
+		<result column="osymptom" property="osymptom"/>
+		<result column="diagnosisandtreatment" property="diagnosisandtreatment"/>
+		<result column="ooctorsorder" property="ooctorsorder"/>
+		<result column="ostate" property="ostate"/>
+		<result column="hangsinglenumber" property="hangsinglenumber"/>
+		<result column="listtime" property="listtime"/>
+		
+		<association property="opets" javaType="com.aaa.Entity.Pet">
+			<id column="petno" property="petno"/>
+			<result column="pname" property="pname"/>
+			<result column="page" property="page"/>
+			<result column="pweight" property="pweight"/>
+			<result column="psterilizationState" property="psterilizationState"/>
+			<result column="pcatanddog" property="pcatanddog"/>
+			<result column="pstate" property="pstate"/>
+			<result column="pimg" property="pimg"/>
+			
+			<association property="pusers" javaType="com.aaa.Entity.PetUser">
+				<id column="userno" property="userno"/>
+				<result column="uname" property="uname"/>
+				<result column="upassword" property="upassword"/>
+				<result column="urealname" property="urealname"/>
+				<result column="uid" property="uid"/>
+				<result column="unumberOfPets" property="unumberOfPets"/>
+				<result column="urole" property="urole"/>
+				<result column="utelephone" property="utelephone"/>
+				<result column="ubalance" property="ubalance"/>
+			</association>
+		</association>
+		
+		<association property="ostafftables" javaType="com.aaa.Entity.StaffTable">
+			<id column="stafftableno" property="stafftableno"/>
+			<result column="sname" property="sname"/>
+			<result column="spassword" property="spassword"/>
+			<result column="srealname" property="srealname"/>
+			<result column="sid" property="sid"/>
+			<result column="srole" property="srole"/>
+			
+			<association property="sdepartments" javaType="com.aaa.Entity.DepartmentTable">
+				<id column="departmenttableno" property="departmenttableno"/>
+				<result column="dname" property="dname"/>
+				<result column="dstate" property="dstate"/>
+			</association>
+			
+			<association property="sroleas" javaType="com.aaa.Entity.RoleTable">
+				<id column="roletableno" property="roletableno"/>
+				<result column="rname" property="rname"/>
+			</association>
+		</association>
+	</resultMap>
+	
+	<insert id="svaeOpenList" useGeneratedKeys="true" keyProperty="openlistno">
+		insert into OpenList values(#{openlistno},'','','',#{ostate},#{hangsinglenumber},NOW(),#{opets.petno},#{ostafftables.stafftableno})
+	</insert>
+	<select id="StarttheorderLoad" resultMap="openlist">
+		select * from StaffTable s 
+		inner join DepartmentTable d on s.sdepartment=d.departmenttableno
+		inner join OpenList o on s.stafftableno=o.ostafftable 
+		inner join Pet p on p.petno=o.opet
+		inner join PetUser u on u.userno=p.puser 
+		where s.stafftableno=#{stafftableno}
+		 and o.ostate=1
+	</select>
+	<select id="countStarttheorderLoad" resultType="java.lang.Long">
+		select count(*) from StaffTable s 
+		inner join DepartmentTable d on s.sdepartment=d.departmenttableno
+		inner join OpenList o on s.stafftableno=o.ostafftable 
+		inner join Pet p on p.petno=o.opet
+		inner join PetUser u on u.userno=p.puser
+		where s.stafftableno=#{stafftableno}
+		 and o.ostate=1
+	</select>
+	<resultMap type="com.aaa.Entity.TherapeuticDrugs" id="TherapeuticDrugsmap">
+		<id column="terapeuticdrugsno" property="terapeuticdrugsno"/>
+		<result column="tnumber" property="tnumber"/>
+		<association property="tcommoditys" javaType="com.aaa.Entity.Commodity">
+			<id column="commodityno" property="commodityno"/>
+			<result column="cpicture" property="cpicture"/>
+			<result column="cprice" property="cprice"/>
+			<result column="cfunction" property="cfunction"/>
+			<result column="cinventory" property="cinventory"/>
+		</association>
+		<association property="topenlists" javaType="com.aaa.Entity.OpenList">
+		</association>
+	</resultMap>
+	
+	<select id="selectcountAdd" resultType="java.lang.Long">
+		select count(*) from TherapeuticDrugs 
+		where tcommodity=#{commodityno} 
+		and topenlist=#{hangsinglenumber}
+	</select>
+	
+	<insert id="AddFormaa">
+		insert into TherapeuticDrugs(tnumber,tcommodity,topenlist,tstate)
+		values(1,#{commodityno},#{hangsinglenumber},0)
+	</insert>
+	
+	<update id="updateForm">
+		update TherapeuticDrugs set tnumber = (tnumber+1)
+		where tcommodity=#{commodityno} 
+		and topenlist=#{hangsinglenumber}
+	</update>
+	
+	<select id="selectaddForm" resultMap="TherapeuticDrugsmap">
+		select t.terapeuticdrugsno,t.tnumber,
+		c.commodityno,c.cpicture,c.cprice,c.cfunction,c.cinventory 
+ 		from TherapeuticDrugs t 
+		inner join OpenList o on t.topenlist=o.openlistno
+		inner join Commodity c on c.commodityno=t.tcommodity
+		where o.openlistno = #{hangsinglenumber}
+	</select>
+	<update id="NextClick">
+		update OpenList set ostate=5 where openlistno=#{openlistno}
+	</update>
+	<update id="submitOpenList">
+		update OpenList set ostate=2,osymptom=#{osymptom},
+		diagnosisandtreatment=#{diagnosisandtreatment},
+		ooctorsorder=#{ooctorsorder}
+		 where openlistno=#{openlistno}
+	</update>
+	<select id="selectreduce" resultType="java.lang.Long">
+		select tnumber from TherapeuticDrugs 
+		where terapeuticdrugsno=#{commodityno}
+	</select>
+	<delete id="deletereduce">
+		delete from TherapeuticDrugs
+		where terapeuticdrugsno=#{commodityno}
+	</delete>
+	<update id="updatereduce">
+		update TherapeuticDrugs set tnumber = (tnumber-1)
+		where terapeuticdrugsno=#{commodityno}
+	</update>
+	
+	
+   <resultMap type="com.aaa.Entity.TherapeuticDrugs" id="TherapeuticDrugsmapaa">
+   	<id column="terapeuticdrugsno" property="terapeuticdrugsno"/>
+   	<result column="tnumber" property="tnumber"/>
+   	<result column="tstate" property="tstate"/>
+   	
+   	<association property="tcommoditys" javaType="com.aaa.Entity.Commodity">
+   		<id column="commodityno" property="commodityno"/>
+   		<result column="cpicture" property="cpicture"/>
+   		<result column="cprice" property="cprice"/>
+   		<result column="cfunction" property="cfunction"/>
+   		<result column="cinventory" property="cinventory"/>
+   	</association>
+   	
+   	<association property="topenlists" javaType="com.aaa.Entity.OpenList">
+   		<id column="openlistno" property="openlistno"/>
+   		<result column="ostate" property="ostate"/>
+   	</association>
+   </resultMap>
+   
+   
+   <select id="oenlistnowherecommodity" resultMap="TherapeuticDrugsmapaa">
+	select c.*,o.ostate,o.openlistno,t.terapeuticdrugsno,t.tnumber,t.tstate from TherapeuticDrugs t 
+	inner join Commodity c on c.commodityno=t.tcommodity
+	inner join OpenList o on t.topenlist=o.openlistno
+	inner join CommoditTypeTable c1 on c1.commodittypetableno = c.ccommodittypetable
+	where o.openlistno=#{openlistno} and commodittypetableno=1
+   </select>
+   
+  <select id="oenlistnowherecommoditys" resultMap="TherapeuticDrugsmapaa">
+	select c.*,o.ostate,o.openlistno,t.terapeuticdrugsno,t.tnumber,t.tstate from TherapeuticDrugs t 
+	inner join Commodity c on c.commodityno=t.tcommodity
+	inner join OpenList o on t.topenlist=o.openlistno
+	inner join CommoditTypeTable c1 on c1.commodittypetableno = c.ccommodittypetable
+	where o.openlistno=#{openlistno} 
+   </select>
+   
+   <update id="updateCommodity">
+   	update Commodity set cinventory = (cinventory-#{tnumber})
+   	where commodityno = #{commodityno}
+   </update>
+   <update id="updateTherapeuticDrugs">
+   	update TherapeuticDrugs set tstate = 1
+   	where terapeuticdrugsno = #{terapeuticdrugsno}
+   </update>
+   
+   <update id="Getthemedicineaaaa">
+   	update OpenList set ostate=4 where openlistno=#{openlistno}
+   </update>
+   <select id="selectGetthemedicineaaaaWhere4" resultType="java.lang.Long">
+   	select count(*) from TherapeuticDrugs where topenlist=#{openlistno} and tstate=0
+   </select>
+   
+   <select id="oenlistnowherecommoditywhere1" resultMap="TherapeuticDrugsmapaa">
+   	select c.*,o.ostate,o.openlistno,t.terapeuticdrugsno,t.tnumber,t.tstate from TherapeuticDrugs t 
+	inner join Commodity c on c.commodityno=t.tcommodity
+	inner join OpenList o on t.topenlist=o.openlistno
+	inner join CommoditTypeTable c1 on c1.commodittypetableno = c.ccommodittypetable
+	where o.openlistno=#{openlistno} and commodittypetableno=2
+   </select>
+   
+   <update id="openlistnoyuefuqian">
+   	update OpenList set ostate=3 where openlistno=#{openlistno}
+   </update>
+   <update id="updateopenlist">
+   	update OpenList set ostate=3 where openlistno=#{openlistno}
+   </update>
+   
+   <select id="OpenListStafftable" resultMap="openlist">
+	select * from OpenList o inner join Stafftable s on o.ostafftable=s.stafftableno
+	where o.opet=#{petno} and o.ostate = 4  ORDER BY o.openlistno desc
+   </select>
+   <select id="selectcountopemlist" resultType="java.lang.Long">
+   	select count(*) from OpenList where opet=#{petno} and ostate = 4
+   </select>
+   
+   
+   <resultMap type="com.aaa.Entity.TherapeuticDrugs" id="TherapeuticDrugsmapaa11">
+   	<id column="terapeuticdrugsno" property="terapeuticdrugsno"/>
+   	<result column="tnumber" property="tnumber"/>
+   	<result column="tstate" property="tstate"/>
+   	
+   	<association property="tcommoditys" javaType="com.aaa.Entity.Commodity">
+   		<id column="commodityno" property="commodityno"/>
+   		<result column="cpicture" property="cpicture"/>
+   		<result column="cprice" property="cprice"/>
+   		<result column="cfunction" property="cfunction"/>
+   		<result column="cinventory" property="cinventory"/>
+   		<association property="ccommodittypetables" javaType="com.aaa.Entity.CommoditTypeTable">
+   			<id column="commodittypetableno" property="commodittypetableno"/>
+   			<result column="cname" property="cname"/>
+   		</association>
+   	</association>
+   </resultMap>
+   
+   
+   
+   <select id="kaidanxingqing" resultMap="TherapeuticDrugsmapaa11">
+	select t.terapeuticdrugsno,t.tnumber,t.tstate,c.commodityno
+	,c.cpicture,c.cprice,c.cfunction,c.cinventory,c1.commodittypetableno,c1.cname
+	from TherapeuticDrugs t inner join Commodity c on t.tcommodity=c.commodityno
+	inner join CommoditTypeTable c1 on c.ccommodittypetable=c1.commodittypetableno
+	where t.topenlist=#{openlistno}
+   </select>
+   
+   <select id="kaidanxingqing123" resultType="com.aaa.Entity.OpenList">
+   	select * from OpenList where openlistno=#{openlistno}
+   </select>
+   
+	<!-- 孙斌编写下-->
+</mapper>

@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aaa.Dao.StaffTableDao">
+<resultMap type="com.aaa.Entity.RoleTable" id="roleamap">
+	<id column="roletableno" property="roletableno"/>
+	<result column="rname" property="rname"/>
+	<collection property="proletables" ofType="com.aaa.Entity.PermissionsTable">
+		<id column="permissionstableno" property="permissionstableno"/>
+		<result column="pname" property="pname"/>
+		<result column="purl" property="purl"/>
+		<result column="plevel" property="plevel"/>
+	</collection>
+</resultMap>
+	<!-- 孙斌编写上 -->
+	<resultMap type="com.aaa.Entity.StaffTable" id="StaffTableaaa">
+		<id column="stafftableno" property="stafftableno"/>
+		<result column="sname" property="sname"/>
+		<result column="spassword" property="spassword"/>
+		<result column="srealname" property="srealname"/>
+		<result column="sid" property="sid"/>
+		<result column="srole" property="srole"/>
+		<association property="sdepartments" javaType="com.aaa.Entity.DepartmentTable">
+			<id column="departmenttableno" property="departmenttableno"/>
+			<result column="dname" property="dname"/>
+			<result column="dstate" property="dstate"/>
+		</association>
+		<association property="sroleas" resultMap="roleamap">
+		</association>
+	</resultMap>
+
+   <sql id="baseSelect"> select s.stafftableno as stafftableno, s.sname as sname,s.spassword as spassword , s.srealname 
+   as srealname,s.sid as sid,s.srole as srole, r.roletableno as roletableno,r.rname as rname, d.departmenttableno as departmenttableno,d.dname as dname,d.dstate as dstate from StaffTable s inner join RoleTable r on s.srolea=r.roletableno inner join DepartmentTable d on s.sdepartment=d.departmenttableno </sql>
+   <select id="loginStaffTablecoun" resultType="java.lang.Long">
+		select count(*) from StaffTable where sname = #{sname} and spassword = #{spassword}
+   </select>
+   <select id="loginuforbidden" resultType="java.lang.Long">
+		select count(*) from StaffTable where sname = #{sname} and spassword = #{spassword} and srole = 0
+   </select>
+   <select id="loginStaffTable" resultMap="StaffTableaaa">
+		select * from StaffTable s inner join DepartmentTable d on s.sdepartment= d.departmenttableno
+inner join RoleTable r on s.srolea = r.roletableno
+ where s.sname = #{sname} and s.spassword = #{spassword}
+   </select>
+   <select id="StaffTablePermissionsTable" resultType="com.aaa.Entity.PermissionsTable">
+select p.* from StaffTable s inner join RoleTable r on s.srolea = r.roletableno 
+inner join PermissionsTable p on r.roletableno = p.proletable where s.stafftableno = #{long1}
+   </select>
+   <select id="StaffTableAjaxSelect" resultMap="StaffTableaaa">
+   		select * from StaffTable where sdepartment=#{a}
+   </select>
+   <select id="SelectRList" resultMap="roleamap">
+   		select * from RoleTable where roletableno not in (1)
+   </select>
+   <select id="SelectRListwhere" resultType="com.aaa.Entity.PermissionsTable">
+   		select p.* from RoleTable r
+   		inner join PermissionsTable p on p.proletable=r.roletableno
+   		where r.roletableno=#{roletableno}
+   </select>
+   <insert id="AddRoleTable">
+   	insert into RoleTable(rname) values(#{rname})
+   </insert>
+   <select id="SelectRListwhere1" resultType="com.aaa.Entity.PermissionsTable">
+   		select p.* from RoleTable r 
+   		inner join PermissionsTable p on p.proletable=r.roletableno
+   		where r.roletableno=1 
+   </select>
+   
+   <resultMap type="com.aaa.Entity.PermissionsTable" id="PermissionsTableMap">
+   		<id column="permissionstableno" property="permissionstableno"/>
+   		<result column="pname" property="pname"/>
+   		<result column="purl" property="purl"/>
+   		<result column="plevel" property="plevel"/>
+   		<association property="proletables" javaType="com.aaa.Entity.RoleTable">
+   			<id column="roletableno" property="roletableno"/>
+   			<result column="rname" property="rname"/>
+   		</association>
+   </resultMap>
+   
+   <select id="selectModifypermissionsa" resultMap="PermissionsTableMap">
+		select p.permissionstableno,p.pname,p.purl,p.plevel,r.roletableno,r.rname 
+		from PermissionsTable p inner join RoleTable r on p.proletable=r.roletableno
+		where p.permissionstableno=#{long1}
+   </select>
+   <insert id="AddModifypermissionsa">
+   		insert into PermissionsTable(pname,purl,plevel,proletable) 
+   		values(#{p.pname},#{p.purl},#{p.plevel},#{roletableno});
+   </insert>
+   <delete id="deleteModifypermissionsa">
+   		delete from PermissionsTable where proletable=#{long1}
+   </delete>
+   
+   
+   
+	<resultMap type="com.aaa.Entity.OpenList" id="openlist1">
+		<id column="openlistno" property="openlistno"/>
+		<result column="osymptom" property="osymptom"/>
+		<result column="diagnosisandtreatment" property="diagnosisandtreatment"/>
+		<result column="ooctorsorder" property="ooctorsorder"/>
+		<result column="ostate" property="ostate"/>
+		<result column="hangsinglenumber" property="hangsinglenumber"/>
+		<result column="listtime" property="listtime"/>
+		
+		<association property="opets" javaType="com.aaa.Entity.Pet">
+			<id column="petno" property="petno"/>
+			<result column="pname" property="pname"/>
+			
+			<association property="pusers" javaType="com.aaa.Entity.PetUser">
+				<id column="userno" property="userno"/>
+				<result column="urealname" property="urealname"/>
+			</association>
+		</association>
+		<association property="ostafftables" javaType="com.aaa.Entity.StaffTable">
+			<id column="stafftableno" property="stafftableno"/>
+			<result column="srealname" property="srealname"/>
+		</association>
+	</resultMap>
+   
+   <select id="SelectUserPays" resultMap="openlist1">
+	select o.openlistno,o.osymptom,o.diagnosisandtreatment,o.ooctorsorder,
+	o.ostate,o.hangsinglenumber,o.listtime,u.userno,
+	u.urealname,p.pname,s.srealname 
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (2,3,4,6)
+    <if test="likewhere!=null and likewhere!=''">
+    	and u.urealname like '%${likewhere}%'
+    </if>
+	ORDER BY o.ostate asc 
+    limit #{offset},#{pagesize}
+   </select>
+     <select id="SelectUserPaya" resultMap="openlist1">
+	select o.openlistno,o.osymptom,o.diagnosisandtreatment,o.ooctorsorder,
+	o.ostate,o.hangsinglenumber,o.listtime,u.userno,
+	u.urealname,p.pname,s.srealname 
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (2) 
+    <if test="likewhere!=null and likewhere!=''">
+    	and u.urealname like '%${likewhere}%'
+    </if>
+    ORDER BY o.ostate asc	
+    limit #{offset},#{pagesize}
+   </select>
+   <select id="SelectUserPayw" resultMap="openlist1">
+	select o.openlistno,o.osymptom,o.diagnosisandtreatment,o.ooctorsorder,
+	o.ostate,o.hangsinglenumber,o.listtime,u.userno,
+	u.urealname,p.pname,s.srealname 
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (3,4,6,7) 
+    <if test="likewhere!=null and likewhere!=''">
+    	and u.urealname like '%${likewhere}%'
+    </if>
+    ORDER BY o.ostate asc
+    limit #{offset},#{pagesize}
+    
+   </select>
+   <select id="SelectCountUserPays" resultType="java.lang.Long">
+	select count(*)
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (2,3,4,6)
+     	<if test="likewhere!=null and likewhere!=''">
+     		and u.urealname like '%${likewhere}%'
+     	</if>
+   </select>
+    <select id="SelectCountUserPaya" resultType="java.lang.Long">
+	select count(*)
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (2)
+     	<if test="likewhere!=null and likewhere!=''">
+     		and u.urealname like '%${likewhere}%'
+     	</if>
+   </select>
+   <select id="SelectCountUserPayw" resultType="java.lang.Long">
+	select count(*)
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (3,4,6,7) 
+     	<if test="likewhere!=null and likewhere!=''">
+     		and u.urealname like '%${likewhere}%'
+     	</if>
+   </select>
+	<!-- 孙斌编写下-->
+	
+<!-- 王金格 -->
+	<select id="listStaffTable" resultMap="StaffTableaaa">
+	 select 
+           s.stafftableno as stafftableno, s.sname as sname,s.spassword as spassword ,
+           s.srealname as srealname,s.sid as sid,s.srole as srole,
+           r.roletableno as roletableno,r.rname as rname, 
+           d.departmenttableno as departmenttableno,d.dname as dname,d.dstate as dstate
+       from StaffTable s 
+       inner join RoleTable r on s.srolea=r.roletableno 
+       inner join DepartmentTable  d on s.sdepartment=d.departmenttableno
+	</select>
+	
+	<insert  id="saveStaffTable" useGeneratedKeys="true" keyProperty="stafftableno" >
+	 insert into StaffTable values(#{stafftableno},#{sname},#{spassword},#{srealname},
+	 #{sid},0,#{sdepartments.departmenttableno},#{sroleas.roletableno})
+	</insert>
+	
+	<update id="updateStaffTable">
+	     update StaffTable 
+       <set>
+           <if test="spassword!=null">
+           spassword=#{spassword},
+          </if>
+           <if test="srealname!=null">
+           srealname=#{srealname},
+          </if>
+            <if test="srole!=null">
+           srole=#{srole},
+          </if>
+          <if test="sdepartments!=null and sdepartments.departmenttableno!=null">
+           sdepartment=#{sdepartments.departmenttableno},
+          </if>
+           <if test="sroleas!=null and sroleas.roletableno!=null">
+           srolea=#{sroleas.roletableno},
+          </if>
+      </set>
+      where stafftableno=#{stafftableno}
+	</update>
+
+   <select id="findById" resultMap="StaffTableaaa">
+      select 
+           s.stafftableno as stafftableno, s.sname as sname,s.spassword as spassword ,
+           s.srealname as srealname,s.sid as sid,s.srole as srole,
+           r.roletableno as roletableno,r.rname as rname, 
+           d.departmenttableno as departmenttableno,d.dname as dname,d.dstate as dstate
+       from StaffTable s 
+       inner join RoleTable r on s.srolea=r.roletableno 
+       inner join DepartmentTable  d on s.sdepartment=d.departmenttableno
+       where s.stafftableno=#{stafftableno}
+   </select>
+   <!-- 以账号进行查询 -->
+   <select id="findBysname" resultType="com.aaa.Entity.StaffTable">
+		select * from StaffTable where sname = #{UserRegistrationval} 
+   </select>
+   <!--以身份证进行查询  -->
+   <select id="findBysid" resultType="com.aaa.Entity.StaffTable">
+		select * from StaffTable where sid = #{RegisteredIdentityCardNumber} 
+   </select>
+   <!--  -->
+   <update id="StaffSrole">
+   update StaffTable set srole=#{srole} where stafftableno=#{stafftableno}
+   </update>
+   
+    <select id="pager" resultMap="StaffTableaaa">
+     <include refid="baseSelect"/>
+      where r.roletableno not in (1)
+     <if test="keyword!=null and keyword!=''">
+     and  s.sname like '%${keyword}%'
+     </if>
+     limit #{offset},#{pagesize}
+   </select>
+   
+   <select id="count" resultType="java.lang.Long">
+    select count(s.stafftableno) from StaffTable s 
+       inner join RoleTable r on s.srolea=r.roletableno 
+       inner join DepartmentTable  d on s.sdepartment=d.departmenttableno
+       where r.roletableno not in (1)
+          <if test="keyword!=null and keyword!=''">
+     and s.sname like '%${keyword}%'
+     </if>
+   </select>  
+   <select id="selectPlevel" resultType="com.aaa.Entity.PermissionsTable">
+	select * from PermissionsTable ORDER BY permissionstableno desc
+   </select>
+</mapper>

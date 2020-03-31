@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aaa.Dao.PetUserDao">
+<!-- 周鹏编写上 -->
+<!-- 送货实体类 -->
+<resultMap type="com.aaa.Entity.Delivery" id="DeliveMap">
+         <id column="delivery" property="delivery"/>
+         <result column="dstate" property="dstate"/>
+         <result column="daddress" property="daddress"/>
+         <result column="dnumber" property="dnumber"/>
+         <!-- 处理多对 一获取一对一-->
+         <!-- 对应员工外键 -->
+         <association property="dstafftableno" javaType="com.aaa.Entity.StaffTable">
+              <id column="stafftableno" property="stafftableno"/>
+              <result column="sname" property="sname"/>
+              <result column="spassword" property="spassword"/>
+              <result column="srealname" property="srealname"/>
+              <result column="sid" property="sid"/>
+              <result column="srole" property="srole"/>
+         </association>
+         <!-- 对应商品外键 -->
+         <association property="dcommodity" javaType="com.aaa.Entity.Commodity">
+              <id column="commodityno" property="commodityno"/>
+              <result column="cpicture" property="cpicture"/>
+              <result column="cprice" property="cprice"/>
+              <result column="cfunction" property="cfunction"/>
+              <result column="cinventory" property="cinventory"/>
+         </association>
+         <!-- 对应用户外键 -->
+         <association property="dpetuser" javaType="com.aaa.Entity.PetUser">
+              <id column="userno" property="userno"/>
+              <result column="uname" property="uname"/>
+              <result column="upassword" property="upassword"/>
+              <result column="urealname" property="urealname"/>
+              <result column="uid" property="uid"/>
+              <result column="unumberOfPets" property="unumberOfPets"/>
+              <result column="urole" property="urole"/>
+              <result column="utelephone" property="utelephone"/>
+              <result column="ubalance" property="ubalance"/>
+         </association>
+         </resultMap>
+        <!--  财务记录表 -->
+         <resultMap type="com.aaa.Entity.FinancialRecords" id="FinaMap">
+         <id column="financialrecordsno" property="financialrecordsno"/>
+         <result column="ftimeofoccurrence" property="ftimeofoccurrence"/>
+         <result column="famountofoccurrence" property="famountofoccurrence"/>
+         <result column="fevent" property="fevent"/>
+         <result column="fremarks" property="fremarks"/>
+         </resultMap>
+         <!-- 财务表 -->
+         <resultMap type="com.aaa.Entity.FinancialStatement" id="StateMap">
+         <id column="financialstatementno" property="financialstatementno"/>
+         <result column="ftotalamount" property="ftotalamount"/>
+         </resultMap>
+         
+         <sql id="baseSelect"> 
+	   select 
+           d.delivery as delivery, d.dstate as dstate,d.daddress as daddress,d.dnumber as dnumber,
+           s.stafftableno as stafftableno,s.srealname as srealname,
+           c.commodityno as commodityno,c.cfunction as cfunction,
+           p.userno as userno,p.urealname as urealname
+       from Delivery d 
+       inner join StaffTable s on d.dstafftableno=s.stafftableno
+       inner join Commodity c on d.dcommodity=c.commodityno
+       inner join PetUser p on d.dpetuser=p.userno
+        where p.userno=#{userno}
+       </sql>
+
+   <!-- 添加商品 -->
+   <insert id="addDelivery" useGeneratedKeys="true" keyProperty="delivery" >
+       insert into Delivery values(#{delivery},#{dstate},#{daddress},#{dnumber},#{dstafftableno.stafftableno},#{dcommodity.commodityno},#{dpetuser.userno})
+   </insert>
+   
+   <!-- 查询我的商品订单 -->
+	<select id="listDelivery" resultMap="DeliveMap">
+      select 
+           d.delivery as delivery, d.dstate as dstate,d.daddress as daddress,d.dnumber as dnumber,
+           c.commodityno as commodityno,c.cfunction as cfunction,c.cprice as cprice,
+           p.userno as userno,p.urealname as urealname
+       from Delivery d 
+       inner join Commodity c on d.dcommodity=c.commodityno
+       inner join PetUser p on d.dpetuser=p.userno
+       where p.userno=#{userno}
+   </select>
+   
+ 
+   <!-- 添加金额记录 -->
+    <insert id="addFinancialRecords">
+       insert into FinancialRecords(ftimeofoccurrence,famountofoccurrence,fevent,foperatingstaff,fuser,fremarks) 
+       values(now(),#{cprice},'网上购买','1',#{userno},'无')
+   </insert>
+ 
+   <!--查询分页数据-->
+<select id="pager" resultMap="DeliveMap">
+
+<include refid="baseSelect"/>
+
+<if test="keyword!=null and keyword!=''"> where d.daddress like '%${keyword}%' </if>
+  ORDER BY d.dstate asc
+limit #{offset},#{pagesize} 
+
+</select>
+
+<!--查询总条数-->
+<select id="count" resultType="java.lang.Long">
+
+select count(d.delivery) from Delivery d 
+inner join Commodity c on d.dcommodity=c.commodityno 
+inner join PetUser p on d.dpetuser=p.userno 
+where p.userno=#{userno}
+<if test="keyword!=null and keyword!=''"> and d.daddress like '%${keyword}%' </if>
+</select>
+ 		<!-- 获取购买余额 -->
+ 	<update id="updateubalance">
+   		update PetUser set ubalance=(ubalance - #{cprice}) where userno=#{userno}
+    </update>
+   		<!-- 添加总金额 -->
+   <update id="updateFinancialStatement">
+   		update FinancialStatement set ftotalamount = (ftotalamount + #{cprice}) where financialstatementno=1
+   </update>
+         
+         
+<!-- 周鹏编写下 -->
+
+	<!-- 孙斌编写上 -->
+	<resultMap type="com.aaa.Entity.OpenList" id="OpenListmap1">
+		<id column="openlistno" property="openlistno"/>
+		<result column="osymptom" property="osymptom"/>
+		<result column="diagnosisandtreatment" property="diagnosisandtreatment"/>
+		<result column="ooctorsorder" property="ooctorsorder"/>
+		<result column="ostate" property="ostate"/>
+		<result column="hangsinglenumber" property="hangsinglenumber"/>
+		<result column="listtime" property="listtime"/>
+		
+		<association property="opets" javaType="com.aaa.Entity.Pet">
+			<id column="petno" property="petno"/>
+			<result column="pname" property="pname"/>
+			
+			<association property="pusers" javaType="com.aaa.Entity.PetUser">
+				<id column="userno" property="userno"/>
+				<result column="urealname" property="urealname"/>
+			</association>
+		</association>
+		<association property="ostafftables" javaType="com.aaa.Entity.StaffTable">
+			<id column="stafftableno" property="stafftableno"/>
+			<result column="srealname" property="srealname"/>
+		</association>
+	</resultMap>
+	
+	
+   <select id="loginusercoun" resultType="java.lang.Long">
+		select count(*) from PetUser where uname = #{uname} and upassword = #{upassword}
+   </select>
+   <select id="loginuforbidden" resultType="java.lang.Long">
+		select count(*) from PetUser where uname = #{uname} and upassword = #{upassword} and urole = 0
+   </select>
+   <select id="loginuser" resultType="com.aaa.Entity.PetUser">
+		select * from PetUser where uname = #{uname} and upassword = #{upassword}
+   </select>
+   <select id="OpenListcountqu" resultType="java.lang.Long">
+	select count(*)
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (3,4,7)
+     	<if test="likewhere!=null and likewhere!=''">
+     		and u.urealname like '%${likewhere}%'
+     	</if>
+   </select>
+   <select id="OpenListcountqua" resultType="java.lang.Long">
+	select count(*)
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (3)
+     	<if test="likewhere!=null and likewhere!=''">
+     		and u.urealname like '%${likewhere}%'
+     	</if>
+   </select>
+   <select id="OpenListcountquw" resultType="java.lang.Long">
+	select count(*)
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (4)
+     	<if test="likewhere!=null and likewhere!=''">
+     		and u.urealname like '%${likewhere}%'
+     	</if>
+   </select>
+   <select id="QueryOpenList" resultMap="OpenListmap1">
+	select o.openlistno,o.osymptom,o.diagnosisandtreatment,o.ooctorsorder,
+	o.ostate,o.hangsinglenumber,o.listtime,
+	u.urealname,p.pname,s.srealname 
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (3,4,7)
+     	<if test="likewhere!=null and likewhere!=''">
+     		and u.urealname like '%${likewhere}%'
+     	</if>
+	ORDER BY o.ostate asc 
+     limit #{offset},#{pagesize}
+   </select>
+   
+   
+    
+   <!--王金格：  取药-->
+   <select id="QueryOpenStaList" resultMap="OpenListmap1">
+	select o.openlistno,o.osymptom,o.diagnosisandtreatment,o.ooctorsorder,
+	o.ostate,o.hangsinglenumber,o.listtime,
+	u.urealname,p.pname,s.srealname 
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (3) 
+     	<if test="likewhere!=null and likewhere!=''">
+     		and u.urealname like '%${likewhere}%'
+     	</if>
+	ORDER BY o.ostate asc 
+     limit #{offset},#{pagesize}
+   </select>
+   
+    <!--王金格：  取药-->
+   <select id="QueryOpenStateList" resultMap="OpenListmap1">
+	select o.openlistno,o.osymptom,o.diagnosisandtreatment,o.ooctorsorder,
+	o.ostate,o.hangsinglenumber,o.listtime,
+	u.urealname,p.pname,s.srealname 
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (4) 
+     	<if test="likewhere!=null and likewhere!=''">
+     		and u.urealname like '%${likewhere}%'
+     	</if>
+	ORDER BY o.ostate asc 
+     limit #{offset},#{pagesize}
+   </select>
+   
+    <select id="OpenListcountquu" resultType="java.lang.Long">
+	select count(*)
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (3)
+     	<if test="likewhere!=null and likewhere!=''">
+     		and u.urealname like '%${likewhere}%'
+     	</if>
+   </select>
+   <!-- 王金格 -->
+   <select id="OpenListcountquuu" resultType="java.lang.Long">
+	select count(*)
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (4)
+     	<if test="likewhere!=null and likewhere!=''">
+     		and u.urealname like '%${likewhere}%'
+     	</if>
+   </select>
+   
+   
+   
+   <select id="QueryOpenLista" resultMap="OpenListmap1">
+	select o.openlistno,o.osymptom,o.diagnosisandtreatment,o.ooctorsorder,
+	o.ostate,o.hangsinglenumber,o.listtime,
+	u.urealname,p.pname,s.srealname 
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (3) 
+     	<if test="likewhere!=null and likewhere!=''">
+     		and u.urealname like '%${likewhere}%'
+     	</if>	
+     	ORDER BY o.ostate asc
+     limit #{offset},#{pagesize}
+     
+   </select>
+   <select id="QueryOpenListw" resultMap="OpenListmap1">
+	select o.openlistno,o.osymptom,o.diagnosisandtreatment,o.ooctorsorder,
+	o.ostate,o.hangsinglenumber,o.listtime,
+	u.urealname,p.pname,s.srealname 
+	from OpenList o
+	inner join Pet p on o.opet=p.petno
+	inner join PetUser u on u.userno=p.puser
+	inner join StaffTable s on o.ostafftable=s.stafftableno
+	where o.ostate in (4) 
+     	<if test="likewhere!=null and likewhere!=''">
+     		and u.urealname like '%${likewhere}%'
+     	</if>	 
+     ORDER BY o.ostate asc
+     limit #{offset},#{pagesize}
+   
+   </select>
+   
+   <select id="yuefuqiancount" resultType="java.lang.Long">
+		select count(*) from PetUser 
+		where userno = #{userno} and ubalance > #{howMuchIsIt}
+   </select>
+   <update id="yuefuqian">
+   		update PetUser set ubalance =(ubalance - #{howMuchIsIt})
+   		where userno = #{userno}
+   </update>
+	<update id="reducebalance">
+		update PetUser set ubalance = (ubalance + ${wIDsubject}) where userno=#{userno}
+	</update>
+	
+	
+	
+	<select id="listDeliveryqwe" resultMap="DeliveMap">
+      select 
+           d.delivery as delivery, d.dstate as dstate,d.daddress as daddress,d.dnumber as dnumber,
+           c.commodityno as commodityno,c.cfunction as cfunction,c.cprice as cprice,
+           p.userno as userno,p.urealname as urealname
+       from Delivery d 
+       inner join Commodity c on d.dcommodity=c.commodityno
+       inner join PetUser p on d.dpetuser=p.userno
+     	<if test="keyword!=null and keyword!=''">
+     		and p.urealname like '%${keyword}%'
+     	</if>
+     ORDER BY d.dstate asc
+     limit #{offset},#{pagesize}
+	</select>
+	
+	<select id="listDeliveryqwecountqwe" resultType="java.lang.Long">
+      select count(*)
+       from Delivery d 
+       inner join Commodity c on d.dcommodity=c.commodityno
+       inner join PetUser p on d.dpetuser=p.userno
+     	<if test="keyword!=null and keyword!=''">
+     		and p.urealname like '%${keyword}%'
+     	</if>	 
+	</select>
+	
+	<update id="ConfirmationOfDeliveryqwe">
+		update Delivery set dstate=1 where delivery=#{delivery}
+	</update>
+	
+	<select id="selecttdananLoad" resultType="java.lang.String">
+		select ubalance from PetUser where userno = #{userno} LIMIT 0,1
+	</select>
+	<select id="selectpetusersession" resultType="com.aaa.Entity.PetUser">
+		select * from PetUser where userno=#{userno}
+		</select>
+	
+	<!-- 孙斌编写下-->
+	
+	
+	<!-- 刘欢编写上-->
+   <!-- 余额充值 -->
+   <!-- <update id="updatepetuser">
+      update petuser set ubalance=ubalance+#{uye}  where userno=#{userno}
+   </update> -->
+   
+   <select id="findByPetUserno" resultType="com.aaa.Entity.PetUser">
+       select * from petuser where userno=#{userno}
+   </select>
+	
+	<!-- 添加用户 -->
+	<insert id="addpetuser" >
+       insert into petuser values(#{userno},#{uname},#{upassword},#{urealname},#{uid},#{unumberOfPets},#{urole},#{utelephone},#{ubalance})
+   </insert>
+	<!-- 修改用户 -->
+	   <update id="updatepetuser" parameterType="com.aaa.Entity.PetUser" >
+      update petuser
+       <set>
+          <if test="uname!=null">
+           uname=#{uname},
+          </if>
+          <if test="upassword!=null">
+           upassword=#{upassword},
+          </if><if test="urealname!=null">
+           urealname=#{urealname},
+          </if><if test="uid!=null">
+           uid=#{uid},
+          </if><if test="unumberOfPets!=null">
+           unumberOfPets=#{unumberOfPets},
+          </if><if test="urole!=null">
+           urole=#{urole},
+          </if><if test="utelephone!=null">
+           utelephone=#{utelephone},
+           </if>
+           <if test="ubalance!=null">
+           ubalance=#{ubalance},
+           </if>
+      </set>
+      where userno=#{userno}
+   </update>
+	
+	<select id="findbyuname" resultType="com.aaa.Entity.PetUser">
+		<!-- select * from PetUser where uname like '%${search}%' -->
+		select * from PetUser where uname like '%${search}%' limit #{offset},#{pagesize} 
+	</select>
+	
+	<select id="selusercountbyuname" resultType="java.lang.Long">
+		select count(*) from PetUser where uname like '%${search}%'
+	</select>
+	
+	
+	<select id="findbyunamesname" resultType="java.lang.Long" parameterType="java.lang.String">
+		select COUNT(uname) from petuser where uname=#{unamesname}
+	</select>
+	
+	
+	
+	<select id="findByUid" resultType="java.lang.Long" parameterType="java.lang.String">
+		select COUNT(uid) from petuser where uid=#{uid}
+	</select>
+	
+	
+	<select id="findByPhone" resultType="java.lang.Long" parameterType="java.lang.String">
+		select COUNT(utelephone) from petuser where utelephone=#{utelephone}
+	</select>
+	
+	
+		<!-- 添加宠物数量 -->
+    <update id="insertunumberOfPets"  >
+      update petuser set unumberOfPets=unumberOfPets+1 where userno = #{userno}
+   </update>
+   <update id="updateFinancialStatements">
+   		update FinancialStatement set ftotalamount = (ftotalamount + #{cprice}) where financialstatementno=1
+   </update>
+	
+	
+	
+	
+	
+	<!-- 刘欢编写下-->
+	<!-- 王金格编写上-->  
+	<insert id="saveuser" useGeneratedKeys="true" keyProperty="userno" >
+       insert into PetUser values(#{userno},#{uname},#{upassword},#{urealname},#{uid},0,0,#{utelephone},'0')
+   </insert>
+   	<!-- 以账号进行查询 -->
+   <select id="findBypetname" resultType="com.aaa.Entity.PetUser">
+		select * from PetUser where uname = #{UserRegistrationval} 
+   </select>
+   	<!-- 以手机号进行查询 -->
+   <select id="findByutelephone" resultType="com.aaa.Entity.PetUser">
+		select * from PetUser where utelephone = #{PhoneNumber} 
+   </select>
+   	<!-- 以身份证进行查询 -->
+      <select id="findByuid" resultType="com.aaa.Entity.PetUser">
+		select * from PetUser where uid = #{RegisteredIdentityCardNumber} 
+   </select>
+   
+	<!-- 王金格编写下-->
+ 	<!-- 周鹏编写上-->
+  <!--  添加送货商品
+   <insert id="addDelivery" useGeneratedKeys="true" keyProperty="delivery" >
+       insert into Delivery values(#{delivery},#{dstate},#{daddress},#{dstafftableno.stafftableno},#{dcommodity.commodityno},#{dpetuser.userno})
+   </insert>
+   查询所有商品订单
+	<select id="listDelivery" resultType="com.aaa.Entity.Delivery">
+      select * from Delivery
+   </select>
+	周鹏格编写下  -->
+	<!-- 康宁编写用户表查询上-->
+	<select id="QueryUser" resultType="com.aaa.Entity.PetUser">
+		select * from PetUser where userno not in (1)
+ limit #{offset},#{pagesize}
+	</select>
+	<select id="selusercount" resultType="java.lang.Long">
+		select count(*) from PetUser 
+	</select>
+	<update id="updateuser">
+		update PetUser set urole=#{urole} where userno=#{userno}
+	</update>
+	<!-- 康宁编写下-->
+</mapper>

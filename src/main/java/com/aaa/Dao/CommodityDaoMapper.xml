@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aaa.Dao.CommodityDao">
+
+<!-- 周鹏编写上 -->
+
+		<resultMap id="CommMap" type="com.aaa.Entity.Commodity">
+		
+		<id property="commodityno" column="commodityno"/>
+		
+		<result property="cpicture" column="cpicture"/>
+		
+		<result property="cprice" column="cprice"/>
+		
+		<result property="cfunction" column="cfunction"/>
+		
+		<result property="cinventory" column="cinventory"/>
+		
+		<!-- 处理多对 一获取一对一-->
+		
+		
+		
+		<association property="ccommodittypetables" javaType="com.aaa.Entity.CommoditTypeTable">
+		
+		<id property="commodittypetableno" column="commodittypetableno"/>
+		
+		<result property="cname" column="cname"/>
+		
+		</association>
+		
+		
+		
+		
+		
+		
+		</resultMap>
+		
+		<sql id="baseSelect"> 
+		select c.commodityno as commodityno, c.cpicture as cpicture,
+		c.cprice as cprice, c.cfunction as cfunction,c.cinventory as 
+		cinventory, d.commodittypetableno as commodittypetableno,
+		d.cname as cname
+		from Commodity c 
+		inner join CommoditTypeTable d on c.ccommodittypetable=d.commodittypetableno </sql>
+		
+		<!-- 查询所有商品 -->
+		
+		
+		<select id="listAlls" resultMap="CommMap"> select c.commodityno as commodityno, c.cpicture as cpicture,c.cprice as cprice, c.cfunction as cfunction,c.cinventory as cinventory, d.commodittypetableno as commodittypetableno,d.cname as cname, p.userno as userno,p.ubalance as ubalance from Commodity c inner join CommoditTypeTable d on c.ccommodittypetable=d.commodittypetableno inner join PetUser p on c.cpetuser=p.userno</select>
+		
+
+<resultMap type="com.aaa.Entity.Commodity" id="CommMap11">
+         <id column="commodityno" property="commodityno"/>
+         <result column="cpicture" property="cpicture"/>
+         <result column="cprice" property="cprice"/>
+         <result column="cfunction" property="cfunction"/>
+         <result column="cinventory" property="cinventory"/>
+         <!-- 处理多对 一获取一对一-->
+         <association property="ccommodittypetables" javaType="com.aaa.Entity.CommoditTypeTable">
+              <id column="commodittypetableno" property="commodittypetableno"/>
+              <result column="cname" property="cname"/>
+         </association>
+     
+     </resultMap>
+     
+		<select id="listAll" resultMap="CommMap11"> 
+      select 
+           c.commodityno as commodityno, c.cpicture as cpicture,c.cprice as cprice,
+           c.cfunction as cfunction,c.cinventory as cinventory,
+           d.commodittypetableno as commodittypetableno,d.cname as cname
+       from Commodity c 
+       inner join CommoditTypeTable d on c.ccommodittypetable=d.commodittypetableno
+       where d.commodittypetableno in (3)
+       </select>
+       
+		<select id="listAll1" resultMap="CommMap11"> 
+      select 
+           c.commodityno as commodityno, c.cpicture as cpicture,c.cprice as cprice,
+           c.cfunction as cfunction,c.cinventory as cinventory,
+           d.commodittypetableno as commodittypetableno,d.cname as cname
+       from Commodity c 
+       inner join CommoditTypeTable d on c.ccommodittypetable=d.commodittypetableno
+       where d.commodittypetableno in (1,2,4)
+       </select>
+       
+		<select id="listAll222" resultMap="CommMap11"> 
+      select 
+           c.commodityno as commodityno, c.cpicture as cpicture,c.cprice as cprice,
+           c.cfunction as cfunction,c.cinventory as cinventory,
+           d.commodittypetableno as commodittypetableno,d.cname as cname
+       from Commodity c 
+       inner join CommoditTypeTable d on c.ccommodittypetable=d.commodittypetableno
+       where c.cfunction like '%${wherelike}%' and c.ccommodittypetable in (1,2)
+       </select> 
+		<!--查询分页数据-->
+		
+		
+		
+		<select id="pager" resultMap="CommMap">
+		
+		<include refid="baseSelect"/>
+		 where d.commodittypetableno in (3,1)
+		<if test="keyword!=null and keyword!=''"> and c.cpicture like '%${keyword}%' </if>
+		limit #{offset},#{pagesize} 
+		</select>
+		
+		<!--查询总条数-->
+		
+		
+		
+		<select id="count" resultType="java.lang.Long">
+		select count(c.commodityno) from Commodity c inner join CommoditTypeTable d on c.ccommodittypetable=d.commodittypetableno
+		 where d.commodittypetableno in (3,1)
+		<if test="keyword!=null and keyword!=''"> and c.cpicture like '%${keyword}%' </if>
+		
+		</select>
+		
+		<!-- 获取购买库存 -->
+		
+		
+		<update id="updatednumber"> update commodity set cinventory=(cinventory - #{dnumber}) where commodityno=#{commodityno} </update>
+		
+		<!-- 模糊查询 -->
+		<select id="findBycf" resultType="com.aaa.Entity.Commodity">
+		
+		select * from Commodity where cfunction like '%${search}%' limit #{offset},#{pagesize} 
+	</select>
+	
+	<select id="selusercount" resultType="java.lang.Long">
+		select count(*) from Commodity 
+	</select>
+		
+		
+		
+		<!-- 周鹏编写下 -->  
+   <!--康宁: 添加商品 -->
+		<insert id="AddProduct" useGeneratedKeys="true" keyProperty="commodityno">
+		insert into commodity values(#{commodityno },#{cpicture},#{cprice},#{cfunction},#{cimporter.stafftableno},#{ccommodittypetables.commodittypetableno},10000)
+	</insert>
+   <update id="Deliveredaaa">
+   	update Delivery set dstate=2 where dpetuser=#{userno} and delivery=#{delivery}
+   </update>
+   
+   
+   
+   
+   
+   <!-- 刘欢 -->
+	
+		<select id="counts" resultType="java.lang.Long">
+		select count(c.commodityno) from Commodity c inner join CommoditTypeTable d on c.ccommodittypetable=d.commodittypetableno where c.ccommodittypetable=3
+		<if test="keyword!=null and keyword!=''">  and c.cfunction like '%${keyword}%'  </if>
+		</select>
+		
+		
+		<select id="pagers" resultMap="CommMap">
+		<include refid="baseSelect"/>
+		where c.ccommodittypetable=3   
+		<if test="keyword!=null and keyword!=''">  and c.cfunction like '%${keyword}%'  </if>
+		limit #{offset},#{pagesize} 
+		</select>
+   
+   
+   
+</mapper>

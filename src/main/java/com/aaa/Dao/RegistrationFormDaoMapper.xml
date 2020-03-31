@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aaa.Dao.RegistrationFormDao">
+	<!-- 孙斌编写上 -->
+	<resultMap type="com.aaa.Entity.RegistrationForm" id="SelectaRegistrationForm">
+		<id column="registrationformno" property="registrationformno"/>
+		<result column="rreservationnumber" property="rreservationnumber"/>
+		<result column="rdate" property="rdate"/>
+		<result column="rstate" property="rstate"/>
+		
+		<association property="rpets" javaType="com.aaa.Entity.Pet">
+			<id column="petno" property="petno"/>
+			<result column="pname" property="pname"/>
+			<result column="page" property="page"/>
+			<result column="pweight" property="pweight"/>
+			<result column="psterilizationState" property="psterilizationState"/>
+			<result column="pcatanddog" property="pcatanddog"/>
+			<result column="pstate" property="pstate"/>
+			<result column="pimg" property="pimg"/>
+			
+			<association property="pusers" javaType="com.aaa.Entity.PetUser">
+				<id column="userno" property="userno"/>
+				<result column="uname" property="uname"/>
+				<result column="upassword" property="upassword"/>
+				<result column="urealname" property="urealname"/>
+				<result column="uid" property="uid"/>
+				<result column="unumberOfPets" property="unumberOfPets"/>
+				<result column="urole" property="urole"/>
+				<result column="utelephone" property="utelephone"/>
+				<result column="ubalance" property="ubalance"/>
+			</association>
+		</association>
+		
+		<association property="rstafftables" javaType="com.aaa.Entity.StaffTable">
+			<id column="stafftableno" property="stafftableno"/>
+			<result column="sname" property="sname"/>
+			<result column="spassword" property="spassword"/>
+			<result column="srealname" property="srealname"/>
+			<result column="sid" property="sid"/>
+			<result column="srole" property="srole"/>
+			<association property="sdepartments" javaType="com.aaa.Entity.DepartmentTable">
+				<id column="departmenttableno" property="departmenttableno"/>
+				<result column="dname" property="dname"/>
+				<result column="dstate" property="dstate"/>
+			</association>
+			<association property="sroleas" javaType="com.aaa.Entity.RoleTable">
+				<id column="roletableno" property="roletableno"/>
+				<result column="rname" property="rname"/>
+			</association>
+		</association>
+	</resultMap>
+	
+	
+	
+	
+	<select id="AjaxHAAWADTO" resultType="java.lang.Long">
+		select count(*) from OpenList where ostafftable=#{a} and ostate=1;
+	</select>
+	
+	<select id="AjaxHAAWADTOaa" resultType="java.lang.Long">
+		SELECT count(*) from RegistrationForm where DATEDIFF(now(),rdate)=0 and rstafftable=#{a};
+	</select>
+	
+	<insert id="submittoRegistrationForm">
+		insert into RegistrationForm(rreservationnumber,rdate,rstate,rpet,rstafftable)
+		values(#{rreservationnumber},NOW(),0,#{rpets.petno},#{rstafftables.stafftableno});
+	</insert>
+	
+	<select id="selectFinancialStatement" resultType="java.lang.Long">
+		select ftotalamount from FinancialStatement where financialstatementno=1
+	</select>
+	<update id="updateFinancialStatement">
+		update FinancialStatement set ftotalamount=#{count} where financialstatementno=1
+	</update>
+	
+	<insert id="insertFinancialRecords">
+		insert into FinancialRecords(ftimeofoccurrence,famountofoccurrence,fevent,foperatingstaff,fuser,fremarks) 
+		values(NOW(),5,'挂号',1,#{userno},'');
+	</insert>
+	<select id="selectusernoRegistrationForm" resultType="java.lang.Long">
+		select ubalance from PetUser where userno=#{userno}
+	</select>
+	<update id="updateusernoRegistrationForm">
+		update PetUser set ubalance= #{ubalance} where userno=#{userno}
+	</update>
+	
+	
+	<sql id="RegistrationFormSql">
+	select * from RegistrationForm r 
+	inner join Pet p on p.petno=r.rpet 
+	inner join petuser u on p.puser=u.userno 
+	inner join StaffTable s on s.stafftableno=r.rstafftable
+	inner join DepartmentTable d on d.departmenttableno=s.sdepartment
+	</sql>
+	
+	<select id="pagerlistAllRegistrationForm" resultMap="SelectaRegistrationForm">
+		<include refid="RegistrationFormSql"/>
+		where 1=1 
+     	<if test="rstate!=2">
+			and r.rstate=#{rstate}
+     	</if>
+     	<if test="likewhere!=null and likewhere!=''">
+     		and u.urealname like '%${likewhere}%'
+     	</if>
+    	ORDER BY r.rdate desc 
+    	limit #{offset},#{pagesize}
+	 </select>
+	
+	<select id="countlistAllRegistrationForm" resultType="java.lang.Long">
+		select count(*) from RegistrationForm r 
+		inner join Pet p on p.petno=r.rpet 
+		inner join petuser u on p.puser=u.userno
+		where 1=1 
+     	<if test="rstate!=2">
+			and r.rstate=#{rstate}
+     	</if>
+     	<if test="likewhere!=null and likewhere!=''">
+     		and u.urealname like '%${likewhere}%'
+     	</if>
+	</select>
+	<update id="onclickJH">
+		update RegistrationForm set rstate=1 where registrationformno=#{registrationformno}
+	</update>
+	
+	
+	<resultMap type="com.aaa.Entity.OpenList" id="openlist">
+		<id column="openlistno" property="openlistno"/>
+		<result column="osymptom" property="osymptom"/>
+		<result column="diagnosisandtreatment" property="diagnosisandtreatment"/>
+		<result column="ooctorsorder" property="ooctorsorder"/>
+		<result column="ostate" property="ostate"/>
+		<result column="hangsinglenumber" property="hangsinglenumber"/>
+		<result column="listtime" property="listtime"/>
+		
+		<association property="opets" javaType="com.aaa.Entity.Pet">
+			<id column="petno" property="petno"/>
+			<result column="pname" property="pname"/>
+			<result column="page" property="page"/>
+			<result column="pweight" property="pweight"/>
+			<result column="psterilizationState" property="psterilizationState"/>
+			<result column="pcatanddog" property="pcatanddog"/>
+			<result column="pstate" property="pstate"/>
+			<result column="pimg" property="pimg"/>
+			
+			<association property="pusers" javaType="com.aaa.Entity.PetUser">
+				<id column="userno" property="userno"/>
+				<result column="uname" property="uname"/>
+				<result column="upassword" property="upassword"/>
+				<result column="urealname" property="urealname"/>
+				<result column="uid" property="uid"/>
+				<result column="unumberOfPets" property="unumberOfPets"/>
+				<result column="urole" property="urole"/>
+				<result column="utelephone" property="utelephone"/>
+				<result column="ubalance" property="ubalance"/>
+			</association>
+		</association>
+		
+		<association property="ostafftables" javaType="com.aaa.Entity.StaffTable">
+			<id column="stafftableno" property="stafftableno"/>
+			<result column="sname" property="sname"/>
+			<result column="spassword" property="spassword"/>
+			<result column="srealname" property="srealname"/>
+			<result column="sid" property="sid"/>
+			<result column="srole" property="srole"/>
+			
+			<association property="sdepartments" javaType="com.aaa.Entity.DepartmentTable">
+				<id column="departmenttableno" property="departmenttableno"/>
+				<result column="dname" property="dname"/>
+				<result column="dstate" property="dstate"/>
+			</association>
+			
+			<association property="sroleas" javaType="com.aaa.Entity.RoleTable">
+				<id column="roletableno" property="roletableno"/>
+				<result column="rname" property="rname"/>
+			</association>
+		</association>
+	</resultMap>
+	
+	<sql id="OpenListSql">
+		select * from StaffTable s 
+		inner join DepartmentTable d on s.sdepartment=d.departmenttableno
+		inner join OpenList o on s.stafftableno=o.ostafftable inner join 
+		Pet p on p.petno=o.opet inner join PetUser u on u.userno=p.puser
+		where s.stafftableno=#{long1} 
+	</sql>
+	<select id="pagerlistAllOpenList" resultMap="openlist">
+	<include refid="OpenListSql"/>
+    <if test="likewhere!=null and likewhere!=''">
+     	and p.pname like '%${likewhere}%'
+     </if>
+	 ORDER BY o.listtime desc 
+    	limit #{offset},#{pagesize}
+	</select>
+	<select id="countlistAllOpenList" resultType="java.lang.Long">
+		select count(*) from StaffTable s 
+		inner join DepartmentTable d on s.sdepartment=d.departmenttableno
+		inner join OpenList o on s.stafftableno=o.ostafftable inner join 
+		Pet p on p.petno=o.opet inner join PetUser u on u.userno=p.puser
+		where s.stafftableno=#{long1}
+     	<if test="likewhere!=null and likewhere!=''">
+     		and p.pname like '%${likewhere}%'
+     	</if>
+	</select>
+	
+	<select id="selectcountRegistrationForm" resultType="java.lang.Long">
+		select count(*) from RegistrationForm 
+		where rpet=#{rpets.petno} and rstate = 0
+	</select>
+	
+	
+	
+	<!-- 孙斌编写下-->
+	<!-- 康宁编写上-->
+	<!-- 康宁查询挂号表 -->
+	<select id="RegisteredQuery" resultMap="SelectaRegistrationForm">
+		select * from RegistrationForm r 
+	inner join Pet p on p.petno=r.rpet 
+	inner join petuser u on p.puser=u.userno 
+	inner join StaffTable s on s.stafftableno=r.rstafftable
+	inner join DepartmentTable d on d.departmenttableno=s.sdepartment where u.userno=#{userno}
+	ORDER BY r.rdate desc 
+    limit #{offset},#{pagesize}
+	</select>
+	
+	<!-- 康宁查询挂号总条数 -->
+	<select id="selcount" resultType="java.lang.Long">
+		select count(*) from RegistrationForm r 
+	inner join Pet p on p.petno=r.rpet 
+	inner join petuser u on p.puser=u.userno 
+	inner join StaffTable s on s.stafftableno=r.rstafftable
+	inner join DepartmentTable d on d.departmenttableno=s.sdepartment where u.userno=#{userno} 
+	</select>
+	<!-- 康宁编写下-->
+</mapper>

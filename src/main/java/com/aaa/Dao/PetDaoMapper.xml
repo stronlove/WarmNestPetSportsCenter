@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aaa.Dao.PetDao">
+	<resultMap type="com.aaa.Entity.Pet" id="PetMap"> 
+		 <id column="petno" property="petno"/>
+         <result column="pname" property="pname"/>
+         <result column="page" property="page"/>
+         <result column="pweight" property="pweight"/>
+         <result column="psterilizationState" property="psterilizationState"/>
+         <result column="pcatanddog" property="pcatanddog"/>
+         <result column="pstate" property="pstate"/>
+         <result column="pimg" property="pimg"/>
+         
+         <!-- 处理多对 一获取一对一-->
+         <association property="pusers" javaType="com.aaa.Entity.PetUser">
+              <id column="userno" property="userno"/>
+              <result column="uname" property="uname"/>
+              <result column="upassword" property="upassword"/>
+              <result column="urealname" property="urealname"/>
+              <result column="uid" property="uid"/>
+              <result column="unumberOfPets" property="unumberOfPets"/>
+              <result column="urole" property="urole"/>
+              <result column="utelephone" property="utelephone"/>
+              <result column="ubalance" property="ubalance"/>
+         </association>
+	</resultMap>
+	<!-- 孙斌编写上 -->
+	<select id="petwhere" resultType="com.aaa.Entity.Pet">
+		select * from Pet where puser=#{userno}
+	</select>
+	<select id="utelephoneselectajax" resultMap="PetMap">
+		select * from pet p inner join PetUser u on u.userno=p.puser where utelephone=#{a}
+	</select>
+	<!-- 孙斌编写下-->
+	<!-- 刘欢编写上-->
+   <!-- 查询所有 -->
+   
+   <select id="petall" resultMap="PetMap">
+		select * from pet p inner join petuser pu on p.puser=pu.userno
+	</select>
+	
+	
+	<select id="findByPetno" resultType="com.aaa.Entity.Pet">
+       select * from pet where petno=#{petno}
+   </select>
+   
+   
+   <insert id="addpet" useGeneratedKeys="true" keyProperty="petno" >
+       insert into pet values(#{petno},#{pname},#{page},#{pweight},#{psterilizationState},#{pcatanddog},#{pstate},#{pimg},#{pusers.userno})
+   </insert>
+   
+   <update id="updatepet" parameterType="com.aaa.Entity.Pet" >
+      update pet
+       <set>
+          <if test="pname!=null">
+           pname=#{pname},
+          </if>
+          <if test="page!=null">
+           page=#{page},
+          </if><if test="pweight!=null">
+           pweight=#{pweight},
+          </if><if test="psterilizationState!=null">
+           psterilizationState=#{psterilizationState},
+          </if><if test="pcatanddog!=null">
+           pcatanddog=#{pcatanddog},
+          </if><if test="pstate!=null">
+           pstate=#{pstate},
+          </if><if test="pimg!=null">
+           pimg=#{pimg},
+           </if>
+      </set>
+      where petno=#{petno}
+   </update>
+   
+   
+   
+   <!-- 8.04 -->
+   <!-- <select id="findbyuserno" resultType="com.aaa.Entity.Pet">
+       select * from pet where puser=#{puser}
+       
+       
+   </select> -->
+   
+ 
+   
+   <select id="findbyuserno" resultType="com.aaa.Entity.Pet" > 
+      select * from Pet where puser=#{userno}
+   </select>
+   
+   <select id="usernoandpuser" resultType="com.aaa.Entity.Pet" > 
+      select * from Pet where puser=#{userno}
+   </select>
+   
+   
+   
+	<select id="QueryPet" resultType="com.aaa.Entity.Pet">
+		select * from Pet where puser=#{userno} limit #{offset},#{pagesize}
+	</select>
+	<select id="selpetcount" resultType="java.lang.Long">
+		select count(*) from Pet where puser=#{userno}
+	</select>
+   
+   
+	<!-- 刘欢编写下-->
+</mapper>

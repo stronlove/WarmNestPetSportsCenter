@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aaa.Dao.FinancialRecordsDao">
+		
+	<resultMap type="com.aaa.Entity.FinancialRecords" id="FinancialRecordsMap">
+			<id column="financialrecordsno" property="financialrecordsno"/>
+         <result column="ftimeofoccurrence" property="ftimeofoccurrence"/>
+         <result column="famountofoccurrence" property="famountofoccurrence"/>
+	</resultMap>
+	<resultMap type="com.aaa.Entity.statistics" id="statisticsMap">
+		<result column="dateweek" property="dateweek"/>
+         <result column="counts" property="counts"/>
+	</resultMap>
+
+	<resultMap type="com.aaa.Entity.FinancialRecords" id="FinancialRecordsMapa">
+		<id column="financialrecordsno" property="financialrecordsno"/>
+		<result column="ftimeofoccurrence" property="ftimeofoccurrence"/>
+		<result column="famountofoccurrence" property="famountofoccurrence"/>
+		<result column="fevent" property="fevent"/>
+		<result column="fremarks" property="fremarks"/>
+		
+		<association property="foperatingstaffs" javaType="com.aaa.Entity.StaffTable">
+			<id column="stafftableno" property="stafftableno"/>
+			<result column="srealname" property="srealname"/>
+		</association>
+		
+		<association property="fuser" javaType="com.aaa.Entity.PetUser">
+			<id column="userno" property="userno"/>
+			<result column="urealname" property="urealname"/>
+		</association>
+	</resultMap>
+
+	<select id="selMoney" resultType="com.aaa.Entity.statistics">
+	select DAY(ftimeofoccurrence) as dateweek,sum(famountofoccurrence)as counts 
+	from financialrecords where month(ftimeofoccurrence)=#{month} and
+	year(ftimeofoccurrence)=DATE_FORMAT(ftimeofoccurrence,'%Y') group BY day(ftimeofoccurrence)
+	</select>
+	
+	<insert id="addJumpPayPage">
+		insert into FinancialRecords(ftimeofoccurrence,famountofoccurrence,fevent,foperatingstaff,fuser,fremarks)
+		values(now(),#{howmuchisit},'医疗开药付钱',#{foperatingstaff},#{userno},'0')
+	</insert>
+	<update id="addFinancialStatement">
+		update FinancialStatement set ftotalamount=(ftotalamount+#{howmuchisit}) where financialstatementno=1
+	</update>
+	
+	
+	
+	<select id="pagerlistAllFinancialRecords" resultMap="FinancialRecordsMapa">
+		select f.financialrecordsno,f.ftimeofoccurrence,f.famountofoccurrence,f.fevent,f.fremarks,
+		p.urealname,s.srealname
+ 		from FinancialRecords f inner join stafftable s on s.stafftableno=f.foperatingstaff
+		inner join petuser p on p.userno=f.fuser 
+     	<if test="likewhere!=null and likewhere!=''">
+     		where p.urealname like '%${likewhere}%' or 
+     		s.srealname like '%${likewhere}%' or 
+     		f.financialrecordsno like '%${likewhere}%' or 
+     		<if test="chinese">
+     			f.ftimeofoccurrence like '%${likewhere}%' or
+     		</if> 
+     		f.famountofoccurrence like '%${likewhere}%' or 
+     		f.fevent like '%${likewhere}%' or 
+     		f.fremarks like '%${likewhere}%'
+     	</if>
+		ORDER BY f.ftimeofoccurrence desc
+    	limit #{offset},#{pagesize}
+	</select>
+	
+	<select id="countlistAllFinancialRecords" resultType="java.lang.Long">
+		
+		select count(*)
+ 		from FinancialRecords f inner join stafftable s on s.stafftableno=f.foperatingstaff
+		inner join petuser p on p.userno=f.fuser 
+     	<if test="likewhere!=null and likewhere!=''">
+     		where p.urealname like '%${likewhere}%' or 
+     		s.srealname like '%${likewhere}%' or 
+     		f.financialrecordsno like '%${likewhere}%' or 
+     		<if test="chinese">
+     			f.ftimeofoccurrence like '%${likewhere}%' or
+     		</if> 
+     		f.famountofoccurrence like '%${likewhere}%' or 
+     		f.fevent like '%${likewhere}%' or 
+     		f.fremarks like '%${likewhere}%'
+     	</if>
+	</select>
+	
+	<insert id="qianJumpPayPage">
+		insert into FinancialRecords(ftimeofoccurrence,famountofoccurrence,fevent,foperatingstaff,fuser,fremarks)
+		values(now(),#{howmuchisit},'用户余额充值',#{foperatingstaff},#{userno},'0')
+	</insert>
+	<update id="qianFinancialStatement">
+		update FinancialStatement set ftotalamount=(ftotalamount+#{howmuchisit}) where financialstatementno=1
+	</update>
+	<select id="selectFinancialStatementcount" resultType="java.lang.Long">
+		select ftotalamount from FinancialStatement 
+	</select>
+	<delete id="DelOrdersId">
+		delete from FinancialRecords where financialrecordsno=#{orderId} and fremarks=0
+	</delete>
+	<select id="selectaddJumpPayPage" resultType="java.lang.Long">
+		select financialrecordsno from FinancialRecords
+		where fuser=#{userno} ORDER BY financialrecordsno desc limit 0,1
+	</select>
+	<select id="selectaddFinancialStatement" resultType="java.lang.String">
+		select famountofoccurrence from FinancialRecords where financialrecordsno=#{howmuchisit}  limit 0,1
+	</select>
+	<update id="updateaddFinancialStatement">
+		update FinancialRecords set fremarks='' where financialrecordsno=#{howmuchisit}
+	</update>
+	<update id="reducebalance">
+		update PetUser set ubalance = (ubalance + ${wIDsubject}) where userno=#{userno}
+	</update>
+</mapper>

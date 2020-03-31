@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aaa.Dao.DepartmentTableDao">
+	<!-- 孙斌编写上 -->
+	<select id="selectDepartmentTable" resultType="com.aaa.Entity.DepartmentTable">
+		select * from DepartmentTable
+	</select>
+	<!-- 王金格 -->
+	<select id="listDepartmentTable" resultType="com.aaa.Entity.DepartmentTable">
+		select * from DepartmentTable
+	</select>
+
+</mapper>
